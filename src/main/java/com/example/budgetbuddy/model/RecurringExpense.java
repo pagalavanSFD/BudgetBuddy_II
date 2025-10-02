@@ -2,29 +2,28 @@ package com.example.budgetbuddy.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
-@Table(name="income")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Income {
+public class RecurringExpense {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String source;
-    @Column(precision = 15, scale = 2)
-    private BigDecimal amount;
+    private String title;
+    private String category;
 
+    private BigDecimal amount; // use BigDecimal for money
 
-    @Column(name = "date")
-    private LocalDateTime date;
+    private String frequency; // "WEEKLY" or "MONTHLY"
+    private LocalDate nextExpenseDate;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
     private User user;
 }

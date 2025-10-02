@@ -3,27 +3,22 @@ package com.example.budgetbuddy.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
-@Table(name="expenses")
+@Table(name = "budget")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Expense {
+public class Budget {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String description;
+    @Column(precision = 15, scale = 2) // Example: 999 trillion max with 2 decimals
+    private BigDecimal monthlyLimit;
 
-    @Column(precision = 15, scale = 2) // e.g. 999 trillion max with 2 decimals
-    private BigDecimal amount;
-
-    private String category;
-
-    @Column(name = "date")
-    private LocalDateTime date;
+    private int month; // 1-12
+    private int year;  // e.g. 2025
 
     @ManyToOne
     @JoinColumn(name = "user_id")

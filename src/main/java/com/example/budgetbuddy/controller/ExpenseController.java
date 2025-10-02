@@ -9,18 +9,18 @@ import com.example.budgetbuddy.repository.UserRepository;
 import com.example.budgetbuddy.security.JwtUtil;
 import org.springframework.web.bind.annotation.*;
 
-
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 @RestController
 @RequestMapping("/api/expenses")
 @CrossOrigin(origins = "http://localhost:3000")
 public class ExpenseController {
-	private final IncomeService incomeService; 
+
+    private final IncomeService incomeService;
     private final ExpenseService expenseService;
     private final UserRepository userRepo;
     private final JwtUtil jwtUtil;
@@ -29,7 +29,7 @@ public class ExpenseController {
         this.expenseService = expenseService;
         this.userRepo = userRepo;
         this.jwtUtil = jwtUtil;
-        this.incomeService = incomeService; 
+        this.incomeService = incomeService;
     }
 
     // GET all expenses for logged-in user
@@ -46,7 +46,6 @@ public class ExpenseController {
         User user = getUserFromToken(authHeader);
         expense.setUser(user);
 
-        // Assign current timestamp if date is missing
         if (expense.getDate() == null) {
             expense.setDate(LocalDateTime.now());
         }
@@ -64,71 +63,81 @@ public class ExpenseController {
         Expense existingExpense = expenseService.getExpenseById(id)
                 .orElseThrow(() -> new RuntimeException("Expense not found with id: " + id));
 
-        // Check ownership
         if (!existingExpense.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("You are not authorized to edit this expense");
         }
 
-        // Update fields safely
         existingExpense.setDescription(updatedExpense.getDescription());
         existingExpense.setAmount(updatedExpense.getAmount());
         existingExpense.setCategory(updatedExpense.getCategory());
 
-        // Update date only if provided
         if (updatedExpense.getDate() != null) {
             existingExpense.setDate(updatedExpense.getDate());
         }
 
         return expenseService.addExpense(existingExpense);
     }
-    
+
+    // Monthly Summary
     @GetMapping("/summary/monthly")
-    public Map<String, Double> getMonthlySummary(@RequestHeader("Authorization") String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) throw new RuntimeException("Invalid token");
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractEmail(token);
-        User user = userRepo.findByEmail(email).orElseThrow();
+    public Map<String, BigDecimal> getMonthlySummary(@RequestHeader("Authorization") String authHeader,
+                                                     @RequestParam int year,
+                                                     @RequestParam int month) {
+        User user = getUserFromToken(authHeader);
 
-        List<Expense> expenses = expenseService.getExpensesByUser(user);
+        BigDecimal totalExpenses = expenseService.getExpensesByUser(user).stream()
+                .filter(e -> e.getDate() != null &&
+                        e.getDate().getYear() == year &&
+                        e.getDate().getMonthValue() == month)
+                .map(Expense::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Map<String, Double> monthlySummary = new TreeMap<>();
-        for (Expense e : expenses) {
-            String month = e.getDate().getMonth().toString() + "-" + e.getDate().getYear();
-            monthlySummary.put(month, monthlySummary.getOrDefault(month, 0.0) + e.getAmount());
-        }
+        BigDecimal totalIncome = incomeService.getIncomeByUser(user).stream()
+                .filter(i -> i.getDate() != null &&
+                        i.getDate().getYear() == year &&
+                        i.getDate().getMonthValue() == month)
+                .map(Income::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Map<String, BigDecimal> monthlySummary = new HashMap<>();
+        monthlySummary.put("totalIncome", totalIncome);
+        monthlySummary.put("totalExpenses", totalExpenses);
+        monthlySummary.put("balance", totalIncome.subtract(totalExpenses));
+
         return monthlySummary;
     }
-    
-    @GetMapping("/summary/category")
-    public Map<String, Double> getCategorySummary(@RequestHeader("Authorization") String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) throw new RuntimeException("Invalid token");
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractEmail(token);
-        User user = userRepo.findByEmail(email).orElseThrow();
 
+    // Category Summary
+    @GetMapping("/summary/category")
+    public Map<String, BigDecimal> getCategorySummary(@RequestHeader("Authorization") String authHeader) {
+        User user = getUserFromToken(authHeader);
         List<Expense> expenses = expenseService.getExpensesByUser(user);
 
-        Map<String, Double> categorySummary = new HashMap<>();
+        Map<String, BigDecimal> categorySummary = new HashMap<>();
         for (Expense e : expenses) {
-            categorySummary.put(e.getCategory(), categorySummary.getOrDefault(e.getCategory(), 0.0) + e.getAmount());
+            categorySummary.merge(e.getCategory(), e.getAmount(), BigDecimal::add);
         }
         return categorySummary;
     }
-    
+
+    // Overall Summary
     @GetMapping("/summary/overall")
-    public Map<String, Double> getOverallSummary(@RequestHeader("Authorization") String authHeader) {
+    public Map<String, BigDecimal> getOverallSummary(@RequestHeader("Authorization") String authHeader) {
         User user = getUserFromToken(authHeader);
 
-        double totalExpenses = expenseService.getExpensesByUser(user)
-                                             .stream().mapToDouble(Expense::getAmount).sum();
+        BigDecimal totalExpenses = expenseService.getExpensesByUser(user).stream()
+                .map(Expense::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        double totalIncome = incomeService.getIncomeByUser(user)
-                                          .stream().mapToDouble(Income::getAmount).sum();
+        BigDecimal totalIncome = incomeService.getIncomeByUser(user).stream()
+                .map(Income::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Map<String, Double> overall = new HashMap<>();
+        Map<String, BigDecimal> overall = new HashMap<>();
         overall.put("totalIncome", totalIncome);
         overall.put("totalExpenses", totalExpenses);
-        overall.put("balance", totalIncome - totalExpenses);
+        overall.put("balance", totalIncome.subtract(totalExpenses));
+
         return overall;
     }
 
@@ -139,7 +148,7 @@ public class ExpenseController {
         return "Expense deleted with id: " + id;
     }
 
-    // Helper method to extract user from JWT
+    // Helper method
     private User getUserFromToken(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new RuntimeException("Invalid token");

@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3000")
+//@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
     private final UserService service;
     private final JwtUtil jwtUtil;
@@ -28,9 +28,10 @@ public class UserController {
     public Map<String, String> login(@RequestBody User user) {
         Optional<User> existing = service.loginUser(user.getEmail(), user.getPassword());
         if (existing.isPresent()) {
-            String token = jwtUtil.generateToken(user.getEmail());
+            String token = jwtUtil.generateToken(existing.get().getEmail()); // FIXED
             return Map.of("token", token);
         }
         return Map.of("error", "Invalid credentials");
     }
+
 }

@@ -1,0 +1,32 @@
+.goal-form {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.goal-form input {
+  padding: 0.5rem;
+  min-width: 150px;
+}
+
+.goal-form button {
+  padding: 0.5rem 1rem;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.goals-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.goal-card {
+  border: 1px solid #ddd;
+  padding: 1rem;
+  border-radius: 6px;
+  min-width: 200px;
+}

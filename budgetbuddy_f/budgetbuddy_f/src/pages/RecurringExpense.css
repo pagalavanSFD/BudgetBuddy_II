@@ -1,0 +1,104 @@
+/* RecurringExpense.css */
+
+.page-content {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #f4f5f7;
+  border-radius: 12px;
+}
+
+.page-content h2 {
+  text-align: center;
+  color: #111827;
+  margin-bottom: 25px;
+}
+
+.expense-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.expense-form input,
+.expense-form select,
+.expense-form button {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+.expense-form input,
+.expense-form select {
+  flex: 1 1 150px;
+}
+
+.expense-form button {
+  flex: 1 1 140px;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.expense-form button:hover {
+  background-color: #4338ca;
+}
+
+.expenses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.expense-card {
+  background-color: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.expense-card h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #111827;
+}
+
+.expense-card p {
+  margin: 2px 0;
+  font-size: 14px;
+  color: #374151;
+}
+
+.expense-card button {
+  align-self: flex-start;
+  padding: 6px 10px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.expense-card button:hover {
+  background-color: #b91c1c;
+}
+
+@media (max-width: 600px) {
+  .expense-form {
+    flex-direction: column;
+  }
+
+  .expense-form input,
+  .expense-form select,
+  .expense-form button {
+    flex: 1 1 100%;
+  }
+}
